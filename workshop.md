@@ -202,7 +202,7 @@ Indications:
 
 Faites une recherche en vous basant comme critère sur une des colonnes de la table de réservation (ex. la date de réservation).
 
-6. Affichez le plan d' exécution de la requête à l'aide de l'instruction ``EXPLAIN``. 
+6. Affichez le plan d' exécution de la requête à l'aide de l'instruction ``EXPLAIN``. Analysez et indiquez la cause du ralentissement.
 
 7. Créer un index pour le champ en question
 
