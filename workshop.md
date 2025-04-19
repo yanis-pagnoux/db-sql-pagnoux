@@ -17,6 +17,8 @@ Dans cet exercice, nous allons créer une base de données pour gérer la réser
 1. 2024_BDD_NOM_PRENOM_EX3
 2. 2024_BDD_NOM_PRENOM_EX1_2 ; (pour les sous-parties)
 
+Chaque requête doit être commentée pour expliquer le comportement attendu.
+
 Ces fichiers devront se trouver sur un référentiel public GIT.
 vous devrez juste envoyer le lien du GIT en fin de TP à alexandre.touret@univ-tours.fr avec comme Objet : [BDD4][Nom][Prenom] - Rendu de TP
 
@@ -101,7 +103,23 @@ Effectuez des requêtes ``UPDATE`` pour mettre à jour les données dans les tab
 > Exemple : Modifiez la quantité disponible d'un matériel après un emprunt, ou encore annuler une réservation existante. 
 >
 
-Requête de modification de la quantité disponible d’un matériel après un emprunt
+1. Requête de modification de la quantité disponible d’un matériel 
+2. Requête de modification de la quantité de tous les matériels qui sont en cours d'emprunt et la date de retour prévue dans plus de 2 jours. 
+
+Vous pouvez utiliser dans PostgreSQL l' instruction
+``current_date`` pour avoir la date du jour.
+
+Pour comparer deux dates, vous pouvez utiliser l'instruction ``ìnterval``.
+
+Ex.: 
+
+```sql
+select CURRENT_DATE 
+
+select INTERVAL '80 days'; 
+```
+
+Pour plus de détails: https://www.postgresql.org/docs/current/functions-datetime.html
 
 ## Exercice 6 : Supprimer des données 
 
@@ -111,8 +129,8 @@ Effectuez des requêtes DELETE pour supprimer des données dans les tables.
 >
 
 1. Requête de suppression d’une réservation existante
+2. Requête de suppression d'une réservation ou la date de retour prévue est passée.
  
- 
 ## Exercice 7 : Requêtes avancées
 
 Effectuer les requêtes suivantes : 
@@ -120,7 +138,7 @@ Effectuer les requêtes suivantes :
 1. Afficher tous les utilisateurs ayant emprunté au moins un équipement 
 2. Afficher les équipements n’ayant jamais été empruntés 
 3. Afficher les équipements ayant été emprunté plus de 3 fois 
-4. Afficher le nombre d’emprunt pour chaque utilisateur 
+4. Afficher le nombre d’emprunts pour chaque utilisateur, ordonné par numéro d'étudiant. Les utilisateurs n'ayant pas de réservations en cours doivent également être affichés avec la valeur 0 dans le nombre d'emprunts.
 
 > aside: positive
 > Aide : Assurez-vous d’avoir tous les pré-requis avant de penser à tester vos requêtes.
@@ -144,6 +162,18 @@ nous souhaitons ajouter des contraintes de disponibilité sur les réservations 
 3. Modifiez les contraintes SQL existantes pour prendre en compte les contraintes de disponibilité lors de la création et de la mise à jour des réservations. 
 
 4. Implémentez une fonctionnalité permettant de vérifier la disponibilité d'un matériel pour une période donnée avant de permettre la réservation. Si le matériel n'est pas disponible, affichez un message d'erreur approprié. 
+
+Vous pouvez afficher la disponibilité par exemple grâce à l'instruction ``CASE``.
+
+Ex. 
+
+```sql
+CASE
+    WHEN test...
+    THEN 'OK'
+    ELSE 'KO'
+END
+```
 
 5. Implémentez une fonctionnalité permettant de gérer les disponibilités du matériel. Les administrateurs doivent pouvoir ajouter, modifier et supprimer des périodes de disponibilité pour chaque matériel. 
 
@@ -176,34 +206,126 @@ Nous allons simuler les effets indésirables liés au traitement d'un grand volu
 
 ### Instructions
 
-1. Aller dans VS Code, ouvrez un terminal et tapez la commande suivante:
+1. Modifiez et adaptez le script suivant dans pgAdmin le script suivant pour inclure:
 
-```bash
-sudo apt update
-sudo apt install postgresql-client
-``` 
+Les noms des colonnes que vous aurez défini:
 
-2. Créez les scripts python suivants et copiez les à la racine du projet
+```sql
+-- Truncate all tables to start fresh
+TRUNCATE TABLE reservation RESTART IDENTITY CASCADE;
+TRUNCATE TABLE disponibilite RESTART IDENTITY CASCADE;
+TRUNCATE TABLE materiel RESTART IDENTITY CASCADE;
+TRUNCATE TABLE utilisateur RESTART IDENTITY CASCADE;
 
-3. Exécutez les scripts
+-- Insert 1,000,000 rows into utilisateur
+DO $$
+DECLARE
+    i INT;
+BEGIN
+    FOR i IN 1..1000000 LOOP
+        INSERT INTO utilisateur (....)
+        VALUES (
+            i,
+            'nom_' || i,
+            'prenom_' || i,
+            'user_' || i || '@example.com'
+        );
+    END LOOP;
+END $$;
 
-4. Importez les fichiers CSV dans la base. Pour chaque table, exécutez la commande SQL ``COPY`` vous permettant d'insérer des données dans une table à partir d'un fichier CSV.
+-- Insert 1,000,000 rows into materiel
+DO $$
+DECLARE
+    i INT;
+BEGIN
+    FOR i IN 1..1000000 LOOP
+        INSERT INTO materiel (....)
+        VALUES (
+            i,
+            'materiel_' || i,
+            'description for materiel_' || i,
+            (random() * 20)::INT + 1 -- Random quantity between 1 and 20 for the available quantity
+        );
+    END LOOP;
+END $$;
 
-Pour le faire à distance, nous utiliserons la commande ``psql`` qui lira le contenu du fichier depuis l' entrée standard (``STDIN``).
+-- Insert 2,000,000 rows into disponibilite
+DO $$
+DECLARE
+    i INT;
+    start_date DATE;
+    end_date DATE;
+BEGIN
+    FOR i IN 1..2000000 LOOP
+        -- Generate random start and end dates
+        start_date := DATE '2025-01-01' + (random() * 365)::INT;
+        end_date := start_date + (random() * 30)::INT;
 
-Indications:
-* L' hôte distant est disponible dans PgAdmin dans les paramètres du serveur.
-* L'utilisateur et mot de passe est ``polytech``.
+        INSERT INTO disponibilite (id_disponibilite, id_materiel, date_debut, date_fin, retard)
+        VALUES (
+            i,
+            (random() * 999999)::INT + 1, -- Random id_materiel between 1 and 1,000,000
+            start_date,
+            end_date,
+            (random() < 0.5) -- Random boolean for retard
+        );
+    END LOOP;
+END $$;
 
-5. Exécutez une recherche impliquant des  jointures entre les tables:
+-- Insert 2,000,000 rows into reservation
+DO $$
+DECLARE
+    i INT;
+    reservation_date DATE;
+    return_date DATE;
+BEGIN
+    FOR i IN 1..2000000 LOOP
+        -- Generate random reservation and return dates
+        reservation_date := DATE '2025-01-01' + (random() * 365)::INT;
+        return_date := reservation_date + (random() * 15)::INT;
+
+        INSERT INTO reservation (...)
+        VALUES (
+            i,
+            reservation_date,
+            return_date,
+            (random() * 999999)::INT + 1, -- Random numero_etudiant between 1 and 1,000,000
+            (random() * 999999)::INT + 1  -- Random identifiant_materiel between 1 and 1,000,000
+        );
+    END LOOP;
+END $$;
+```
+
+5. Exécutez une recherche impliquant des jointures entre les tables:
 * Matériel
 * Réservation
 * Utilisateur
+* Disponibilité
 
-Faites une recherche en vous basant comme critère sur une des colonnes de la table de réservation (ex. la date de réservation).
+Faites une recherche en vous basant comme critère sur une des colonnes de la table de réservation (ex. la date de début de disponibilité).
 
-6. Affichez le plan d' exécution de la requête à l'aide de l'instruction ``EXPLAIN``. Analysez et indiquez la cause du ralentissement.
+6. Affichez le plan d' exécution de la requête à l'aide de l'instruction ``EXPLAIN ANALYZE``. Analysez et indiquez la cause du ralentissement.
+
+Vous pouvez également consulter l'onglet `Explain`` pour avoir une représentation graphique.
 
 7. Créer un index pour le champ en question
 
 8. Relancez la requête et affichez une nouvelle fois le plan d'exécution.
+
+9. Création des index pour l'opérateur ``like``
+
+Créer un index pour le nom d'utilisateur et exécuter une recherche impliquant un opérateur ``like`` sur le nom (ex. ``like %nom%1%``). Pour cela, il vous faudra activer l'extension ``gin``
+
+Activez l'extension :
+
+```sql
+CREATE EXTENSION pg_trgm;
+```
+
+Puis indiquez dans la création de l'index, l'extension ``gin``: 
+
+```sql
+CREATE INDEX .... USING gin (nom gin_trgm_ops);
+```
+
+Affichez une nouvelle fois le plan d'exécution
