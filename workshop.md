@@ -211,19 +211,24 @@ Nous allons simuler les effets indésirables liés au traitement d'un grand volu
 Les noms des colonnes que vous aurez défini:
 
 ```sql
--- Truncate all tables to start fresh
+alter table disponibilite drop constraint disponibilite_id_materiel_fkey;
+alter table reservation drop constraint reservation_numeroetudiant_fkey;
+alter table reservation drop constraint reservation_identifiantmateriel_fkey;
+alter table reservation drop constraint reservation_id_disponibilite_fkey;
+
 TRUNCATE TABLE reservation RESTART IDENTITY CASCADE;
 TRUNCATE TABLE disponibilite RESTART IDENTITY CASCADE;
 TRUNCATE TABLE materiel RESTART IDENTITY CASCADE;
 TRUNCATE TABLE utilisateur RESTART IDENTITY CASCADE;
+
 
 -- Insert 1,000,000 rows into utilisateur
 DO $$
 DECLARE
     i INT;
 BEGIN
-    FOR i IN 1..1000000 LOOP
-        INSERT INTO utilisateur (....)
+    FOR i IN 1..100000 LOOP
+        INSERT INTO utilisateur ()
         VALUES (
             i,
             'nom_' || i,
@@ -238,8 +243,8 @@ DO $$
 DECLARE
     i INT;
 BEGIN
-    FOR i IN 1..1000000 LOOP
-        INSERT INTO materiel (....)
+    FOR i IN 1..100000 LOOP
+        INSERT INTO materiel ()
         VALUES (
             i,
             'materiel_' || i,
@@ -256,12 +261,12 @@ DECLARE
     start_date DATE;
     end_date DATE;
 BEGIN
-    FOR i IN 1..2000000 LOOP
+    FOR i IN 1..200000 LOOP
         -- Generate random start and end dates
         start_date := DATE '2025-01-01' + (random() * 365)::INT;
         end_date := start_date + (random() * 30)::INT;
 
-        INSERT INTO disponibilite (id_disponibilite, id_materiel, date_debut, date_fin, retard)
+        INSERT INTO disponibilite ()
         VALUES (
             i,
             (random() * 999999)::INT + 1, -- Random id_materiel between 1 and 1,000,000
@@ -278,19 +283,23 @@ DECLARE
     i INT;
     reservation_date DATE;
     return_date DATE;
+	effective_return_date DATE;
 BEGIN
-    FOR i IN 1..2000000 LOOP
+    FOR i IN 1..200000 LOOP
         -- Generate random reservation and return dates
         reservation_date := DATE '2025-01-01' + (random() * 365)::INT;
         return_date := reservation_date + (random() * 15)::INT;
+		effective_return_date := reservation_date + (random() * 15)::INT;
 
-        INSERT INTO reservation (...)
+        INSERT INTO reservation ()
         VALUES (
             i,
             reservation_date,
             return_date,
             (random() * 999999)::INT + 1, -- Random numero_etudiant between 1 and 1,000,000
-            (random() * 999999)::INT + 1  -- Random identifiant_materiel between 1 and 1,000,000
+            (random() * 999999)::INT + 1,  -- Random identifiant_materiel between 1 and 1,000,000
+			(random() * 999999)::INT + 1 , -- Random identifiant_materiel between 1 and 1,000,000
+			effective_return_date
         );
     END LOOP;
 END $$;
@@ -308,7 +317,7 @@ Faites une recherche en vous basant comme critère sur une des colonnes de la ta
 
 Vous pouvez également consulter l'onglet `Explain`` pour avoir une représentation graphique.
 
-7. Créer un index pour le champ en question
+7. Créer des index pour le champ en question ainsi que les clés étrangères impliquées
 
 8. Relancez la requête et affichez une nouvelle fois le plan d'exécution.
 
