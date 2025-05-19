@@ -1,0 +1,2 @@
+SELECT * FROM Utilisateur
+WHERE nomUtilisateur = 'Lopez';

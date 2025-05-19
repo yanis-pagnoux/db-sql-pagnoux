@@ -18,10 +18,11 @@ CREATE TABLE Reservation(
    dateDebutReservation DATE,
    dateFinReservation DATE,
    IdUtilisateur SERIAL NOT NULL,
+   IdMateriel SERIAL NOT NULL,
    PRIMARY KEY(IdReservation),
-   FOREIGN KEY(IdUtilisateur) REFERENCES Utilisateur(IdUtilisateur)
+   FOREIGN KEY(IdUtilisateur) REFERENCES Utilisateur(IdUtilisateur),
+   FOREIGN KEY(IdMateriel) REFERENCES Materiel(IdMateriel)
 );
-
 
 INSERT INTO Utilisateur (nomUtilisateur, prenomUtilisateur, emailUtilisateur) 
 VALUES 
@@ -61,3 +62,4 @@ VALUES
 ('Ecran'),
 ('Cadenas'),
 ('Tente');
+
