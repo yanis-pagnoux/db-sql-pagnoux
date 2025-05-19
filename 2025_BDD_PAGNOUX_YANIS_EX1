@@ -1,0 +1,63 @@
+CREATE TABLE Utilisateur(
+   IdUtilisateur SERIAL,
+   nomUtilisateur VARCHAR(50),
+   prenomUtilisateur VARCHAR(50),
+   emailUtilisateur VARCHAR(50),
+   PRIMARY KEY(IdUtilisateur)
+);
+
+CREATE TABLE Materiel(
+   IdMateriel SERIAL,
+   nomMateriel VARCHAR(50),
+   quantite INT,
+   PRIMARY KEY(IdMateriel)
+);
+
+CREATE TABLE Reservation(
+   IdReservation SERIAL,
+   dateDebutReservation DATE,
+   dateFinReservation DATE,
+   IdUtilisateur SERIAL NOT NULL,
+   PRIMARY KEY(IdReservation),
+   FOREIGN KEY(IdUtilisateur) REFERENCES Utilisateur(IdUtilisateur)
+);
+
+
+INSERT INTO Utilisateur (nomUtilisateur, prenomUtilisateur, emailUtilisateur) 
+VALUES 
+('Dupont', 'Jean', 'jean.dupont@example.com'),
+('Martin', 'Claire', 'claire.martin@example.com'),
+('Bernard', 'Pierre', 'pierre.bernard@example.com'),
+('Lemoine', 'Sophie', 'sophie.lemoine@example.com'),
+('Durand', 'Marc', 'marc.durand@example.com'),
+('Dufresne', 'Julie', 'julie.dufresne@example.com'),
+('Lopez', 'Carlos', 'carlos.lopez@example.com'),
+('Benoit', 'Isabelle', 'isabelle.benoit@example.com'),
+('Gauthier', 'Thomas', 'thomas.gauthier@example.com'),
+('Perrin', 'Nathalie', 'nathalie.perrin@example.com');
+
+INSERT INTO Reservation (dateDebutReservation, dateFinReservation, IdMateriel, IdUtilisateur) 
+VALUES 
+('2025-06-01', '2025-06-07', 001, 001),
+('2025-06-05', '2025-06-10', 002, 002),
+('2025-06-10', '2025-06-15', 003, 003),
+('2025-06-12', '2025-06-18', 004, 004),
+('2025-06-15', '2025-06-20', 005, 005),
+('2025-06-18', '2025-06-22', 006, 006),
+('2025-06-20', '2025-06-25', 007, 007),
+('2025-06-25', '2025-06-30', 008, 008),
+('2025-07-01', '2025-07-05', 009, 009),
+('2025-07-03', '2025-07-08', 010, 010);
+
+INSERT INTO Materiel (nomMateriel)
+VALUES 
+('Ordinateur portable'),
+('Tablette'),
+('Projecteur'),
+('Table de réunion'),
+('Chaises'),
+('Téléphone mobile'),
+('Clé USB'),
+('Ecran'),
+('Cadenas'),
+('Tente');
