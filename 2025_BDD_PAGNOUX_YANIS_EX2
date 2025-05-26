@@ -1,9 +1,9 @@
 
---SELECT * FROM Utilisateur
---WHERE nomUtilisateur = 'Lopez';
+SELECT * FROM Utilisateur
+WHERE nomUtilisateur = 'Lopez';
 
---SELECT * FROM Materiel
---WHERE nomMateriel = 'Tablette';
+SELECT * FROM Materiel
+WHERE nomMateriel = 'Tablette';
 
 SELECT * FROM Reservation
 WHERE dateFinreservation = '2025/06/07';

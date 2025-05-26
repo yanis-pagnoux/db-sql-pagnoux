@@ -1,0 +1,36 @@
+--Afficher tous les utilisateurs ayant emprunté au moins un équipement
+
+SELECT DISTINCT U.IdUtilisateur, U.nomUtilisateur, U.prenomUtilisateur
+FROM Utilisateur U
+JOIN Reservation R ON U.IdUtilisateur = R.IdUtilisateur;
+
+
+
+--Afficher les équipements n’ayant jamais été empruntés
+
+SELECT M.IdMateriel, M.nomMateriel
+FROM Materiel M
+LEFT JOIN Reservation R ON M.IdMateriel = R.IdMateriel
+WHERE R.IdMateriel IS NULL;
+
+
+--Afficher les équipements ayant été emprunté plus de 3 fois
+
+SELECT M.IdMateriel, M.nomMateriel, COUNT(R.IdReservation) AS nombre_emprunts
+FROM Materiel M
+JOIN Reservation R ON M.IdMateriel = R.IdMateriel
+GROUP BY M.IdMateriel, M.nomMateriel
+HAVING COUNT(R.IdReservation) > 3;
+
+
+--Afficher le nombre d’emprunts pour chaque utilisateur, ordonné par numéro d'étudiant. Les utilisateurs n'ayant pas de réservations en cours doivent également être affichés avec la valeur 0 dans le nombre d'emprunts.
+
+SELECT 
+    U.IdUtilisateur,
+    U.nomUtilisateur,
+    U.prenomUtilisateur,
+    COUNT(R.IdReservation) AS nombre_emprunts
+FROM Utilisateur U
+LEFT JOIN Reservation R ON U.IdUtilisateur = R.IdUtilisateur
+GROUP BY U.IdUtilisateur, U.nomUtilisateur, U.prenomUtilisateur
+ORDER BY U.IdUtilisateur;

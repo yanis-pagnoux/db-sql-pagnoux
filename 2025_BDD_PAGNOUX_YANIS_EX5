@@ -1,0 +1,17 @@
+--Requête de modification de la quantité disponible d’un matériel
+
+UPDATE Materiel
+SET quantite = 3
+WHERE nomMateriel = 'Ordinateur portable';
+
+
+--Requête de modification de la quantité de tous les matériels qui sont en cours d'emprunt et la date de retour prévue dans plus de 2 jours.
+
+UPDATE Materiel
+SET quantite = quantite - 1
+WHERE IdMateriel IN (
+    SELECT R.IdMateriel
+    FROM Reservation R
+    WHERE CURRENT_DATE BETWEEN R.dateDebutReservation AND R.dateFinReservation
+      AND R.dateFinReservation > CURRENT_DATE + INTERVAL '2 days'
+);
