@@ -1,0 +1,90 @@
+--Mettez à jour le modèle de données existant en ajoutant une nouvelle table "disponibilite".
+CREATE TABLE Disponibilite(
+    IdDisponibilite SERIAL,
+    dateDebut DATE,
+    dateFin DATE,
+	IdMateriel SERIAL NOT NULL,
+	PRIMARY KEY(IdDisponibilite),
+    FOREIGN KEY(IdMateriel) REFERENCES Materiel(IdMateriel)
+);
+
+--Modifiez la table "reservation" en ajoutant une nouvelle colonne "id_disponibilite" (clé étrangère référençant la table "disponibilite").
+ALTER TABLE Reservation
+ADD COLUMN IdDisponibilite INT REFERENCES Disponibilite(IdDisponibilite);
+
+--Modifiez les contraintes SQL existantes pour prendre en compte les contraintes de disponibilité lors de la création et de la mise à jour des réservations.
+ALTER TABLE Reservation
+ADD CONSTRAINT fk_reservation_disponibilite
+FOREIGN KEY (IdDisponibilite) REFERENCES Disponibilite(IdDisponibilite);
+
+--Implémentez une fonctionnalité permettant de vérifier la disponibilité d'un matériel pour une période donnée avant de permettre la réservation. Si le matériel n'est pas disponible, affichez un message d'erreur approprié.
+SELECT
+	m.IdMateriel,
+    m.nomMateriel,
+    CASE
+		WHEN EXISTS (
+		SELECT 1
+		FROM Disponibilite d
+        WHERE d.IdMateriel = m.IdMateriel
+			AND '2025-05-20 09:00:00' >= d.dateDebut
+			AND '2025-05-25 09:00:00' <= d.dateFin
+			AND NOT EXISTS (
+                  SELECT 1
+				  FROM Reservation r
+                  WHERE r.IdDisponibilite = d.IdDisponibilite
+				  	AND ('2025-05-20 09:00:00', '2025-05-25 09:00:00') OVERLAPS (r.dateDebutReservation, r.dateFinReservation)  -- Première date = date début et Seconde date = date fin              
+					)        
+				)        
+				THEN 'OK'        
+				ELSE 'KO'
+    END AS statut_disponibilite
+FROM Materiel m
+WHERE m.IdMateriel = 9;
+
+--Implémentez une fonctionnalité permettant de gérer les disponibilités du matériel. Les administrateurs doivent pouvoir ajouter, modifier et supprimer des périodes de disponibilité pour chaque matériel.
+--AJOUTER
+CREATE OR REPLACE FUNCTION ajouter_disponibilite(
+    p_IdMateriel INTEGER,
+    p_dateDebut TIMESTAMP,
+    p_dateFin TIMESTAMP
+) RETURNS VOID AS $$
+BEGIN
+    INSERT INTO Disponibilite (IdMateriel, dateDebut, dateFin)
+    VALUES (p_IdMateriel, p_dateDebut, p_dateFin);
+END;
+$$ LANGUAGE plpgsql;
+
+--MODIFIER
+CREATE OR REPLACE FUNCTION ajouter_disponibilite(
+    p_IdMateriel INTEGER,
+    p_dateDebut TIMESTAMP,
+    p_dateFin TIMESTAMP
+) RETURNS VOID AS $$
+BEGIN
+    INSERT INTO Disponibilite (IdMateriel, dateDebut, dateFin)
+    VALUES (p_IdMateriel, p_dateDebut, p_dateFin);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION modifier_disponibilite(
+    p_IdDisponibilite INTEGER,
+    p_dateDebut TIMESTAMP,
+    p_dateFin TIMESTAMP
+) RETURNS VOID AS $$
+BEGIN
+    UPDATE Disponibilite
+    SET dateDebut = p_dateDebut,
+        dateFin = p_dateFin
+    WHERE IdDisponibilite = p_IdDisponibilite;
+END;
+$$ LANGUAGE plpgsql;
+
+--SUPPRIMER
+CREATE OR REPLACE FUNCTION supprimer_disponibilite(
+    p_IdDisponibilite INTEGER
+) RETURNS VOID AS $$
+BEGIN
+    DELETE FROM Disponibilite
+    WHERE IdDisponibilite = p_IdDisponibilite;
+END;
+$$ LANGUAGE plpgsql;
