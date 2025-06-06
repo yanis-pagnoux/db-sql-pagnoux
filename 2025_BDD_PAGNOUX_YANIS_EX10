@@ -110,3 +110,25 @@ ON Reservation(dateDebutReservation);
 "Planning Time: 0.662 ms"
 "Execution Time: 104.639 ms"
 --Après l'ajout des index le temps d'execution à quelque peu diminué.
+
+--Créer un index pour le nom d'utilisateur et exécuter une recherche impliquant un opérateur like sur le nom (ex. like %nom%1%). Pour cela, il vous faudra activer l'extension gin
+CREATE INDEX idx_nom_utilisateur_trgm
+ON Utilisateur
+USING gin (nomUtilisateur gin_trgm_ops);
+
+EXPLAIN ANALYZE
+SELECT *
+FROM Utilisateur
+WHERE nomUtilisateur LIKE '%nom%1%';
+
+--Resultat du EXPLAIN ANALYZE:
+"QUERY PLAN"
+"Bitmap Heap Scan on utilisateur  (cost=247.91..1711.84 rows=35354 width=47) (actual time=8.065..25.199 rows=40952 loops=1)"
+"  Recheck Cond: ((nomutilisateur)::text ~~ '%nom%1%'::text)"
+"  Rows Removed by Index Recheck: 59048"
+"  Heap Blocks: exact=1022"
+"  ->  Bitmap Index Scan on idx_nom_utilisateur_trgm  (cost=0.00..239.08 rows=35354 width=0) (actual time=7.920..7.921 rows=100000 loops=1)"
+"        Index Cond: ((nomutilisateur)::text ~~ '%nom%1%'::text)"
+"Planning Time: 0.102 ms"
+"Execution Time: 26.470 ms"
+
