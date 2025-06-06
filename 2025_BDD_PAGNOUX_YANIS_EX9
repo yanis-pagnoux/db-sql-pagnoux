@@ -13,5 +13,5 @@ ALTER TABLE Reservation
 ADD COLUMN dateRetourEffectif DATE;
 
 --Modifiez les contraintes SQL existantes pour prendre en compte les retours de matériel et les retards éventuels lors de la mise à jour des réservations.
---RAF
+--FAIT
 
