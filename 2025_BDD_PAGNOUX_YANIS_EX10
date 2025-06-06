@@ -1,1 +1,112 @@
---Pas de soucis
+--Exécuter une recherche impliquant des jointures entre les tables:
+
+SELECT 
+    R.IdReservation,
+    U.nomUtilisateur,
+    U.prenomUtilisateur,
+    M.nomMateriel,
+    R.dateDebutReservation,
+    R.dateFinReservation,
+    D.dateDebut AS dateDebutDisponibilite,
+    D.dateFin AS dateFinDisponibilite
+FROM Reservation R
+JOIN Utilisateur U ON R.IdUtilisateur = U.IdUtilisateur
+JOIN Materiel M ON R.IdMateriel = M.IdMateriel
+JOIN Disponibilite D ON R.IdDisponibilite = D.IdDisponibilite
+WHERE R.dateDebutReservation BETWEEN '2025-06-01' AND '2025-06-30'
+ORDER BY R.dateDebutReservation;
+
+--Affiche le plan d'exécution de la requête à l'aide de l'instruction EXPLAIN ANALYZE. Analysez et indiquez la cause du ralentissement.
+EXPLAIN ANALYZE
+SELECT 
+    R.IdReservation,
+    U.nomUtilisateur,
+    U.prenomUtilisateur,
+    M.nomMateriel,
+    R.dateDebutReservation,
+    R.dateFinReservation,
+    D.dateDebut AS dateDebutDisponibilite,
+    D.dateFin AS dateFinDisponibilite
+FROM Reservation R
+JOIN Utilisateur U ON R.IdUtilisateur = U.IdUtilisateur
+JOIN Materiel M ON R.IdMateriel = M.IdMateriel
+JOIN Disponibilite D ON R.IdDisponibilite = D.IdDisponibilite
+WHERE R.dateDebutReservation BETWEEN '2025-06-01' AND '2025-06-30'
+ORDER BY R.dateDebutReservation;
+
+--Resultat :
+"QUERY PLAN"
+"Gather Merge  (cost=13963.11..15075.27 rows=9671 width=55) (actual time=109.556..116.655 rows=16517 loops=1)"
+"  Workers Planned: 1"
+"  Workers Launched: 1"
+"  ->  Sort  (cost=12963.10..12987.27 rows=9671 width=55) (actual time=107.182..107.905 rows=8258 loops=2)"
+"        Sort Key: r.datedebutreservation"
+"        Sort Method: quicksort  Memory: 1025kB"
+"        Worker 0:  Sort Method: quicksort  Memory: 1020kB"
+"        ->  Parallel Hash Join  (cost=9566.37..12322.90 rows=9671 width=55) (actual time=82.682..104.262 rows=8258 loops=2)"
+"              Hash Cond: (d.iddisponibilite = r.iddisponibilite)"
+"              ->  Parallel Seq Scan on disponibilite d  (cost=0.00..2258.47 rows=117647 width=12) (actual time=0.007..6.262 rows=100000 loops=2)"
+"              ->  Parallel Hash  (cost=9445.48..9445.48 rows=9671 width=51) (actual time=82.368..82.373 rows=8258 loops=2)"
+"                    Buckets: 32768  Batches: 1  Memory Usage: 1696kB"
+"                    ->  Hash Join  (cost=6159.00..9445.48 rows=9671 width=51) (actual time=63.626..78.845 rows=8258 loops=2)"
+"                          Hash Cond: (r.idmateriel = m.idmateriel)"
+"                          ->  Hash Join  (cost=3272.00..6533.09 rows=9671 width=41) (actual time=34.940..46.781 rows=8258 loops=2)"
+"                                Hash Cond: (r.idutilisateur = u.idutilisateur)"
+"                                ->  Parallel Seq Scan on reservation r  (cost=0.00..3235.71 rows=9671 width=24) (actual time=0.011..8.270 rows=8258 loops=2)"
+"                                      Filter: ((datedebutreservation >= '2025-06-01'::date) AND (datedebutreservation <= '2025-06-30'::date))"
+"                                      Rows Removed by Filter: 91742"
+"                                ->  Hash  (cost=2022.00..2022.00 rows=100000 width=25) (actual time=34.468..34.469 rows=100000 loops=2)"
+"                                      Buckets: 131072  Batches: 1  Memory Usage: 6880kB"
+"                                      ->  Seq Scan on utilisateur u  (cost=0.00..2022.00 rows=100000 width=25) (actual time=0.020..11.241 rows=100000 loops=2)"
+"                          ->  Hash  (cost=1637.00..1637.00 rows=100000 width=18) (actual time=28.214..28.215 rows=100000 loops=2)"
+"                                Buckets: 131072  Batches: 1  Memory Usage: 6102kB"
+"                                ->  Seq Scan on materiel m  (cost=0.00..1637.00 rows=100000 width=18) (actual time=0.020..9.531 rows=100000 loops=2)"
+"Planning Time: 0.419 ms"
+"Execution Time: 118.170 ms"
+--Le temps d'execution relativement long (de 118.170 ms) s'explique par le nombre de données à traiter suite au remplissage de la base lors de la première étape de l'exercice.
+
+
+--Créer des index pour le champ en question ainsi que les clés étrangères impliquées
+--Pour optimiser le parcours de la BDD on créer des index afin que seul les données utiles soient parcourue.
+
+CREATE INDEX idx_reservation_id_utilisateur
+ON Reservation(IdUtilisateur);
+
+CREATE INDEX idx_reservation_id_materiel
+ON Reservation(IdMateriel);
+
+CREATE INDEX idx_reservation_id_disponibilite
+ON Reservation(IdDisponibilite);
+
+CREATE INDEX idx_reservation_date_debut
+ON Reservation(dateDebutReservation);
+
+
+--Relancez la requête et affichez une nouvelle fois le plan d'exécution.
+"QUERY PLAN"
+"Sort  (cost=13198.48..13239.58 rows=16441 width=55) (actual time=102.151..104.070 rows=16517 loops=1)"
+"  Sort Key: r.datedebutreservation"
+"  Sort Method: quicksort  Memory: 2045kB"
+"  ->  Hash Join  (cost=7800.79..12047.20 rows=16441 width=55) (actual time=60.243..96.563 rows=16517 loops=1)"
+"        Hash Cond: (d.iddisponibilite = r.iddisponibilite)"
+"        ->  Seq Scan on disponibilite d  (cost=0.00..3082.00 rows=200000 width=12) (actual time=0.008..11.085 rows=200000 loops=1)"
+"        ->  Hash  (cost=7595.28..7595.28 rows=16441 width=51) (actual time=60.134..60.139 rows=16517 loops=1)"
+"              Buckets: 32768  Batches: 1  Memory Usage: 1638kB"
+"              ->  Hash Join  (cost=4783.87..7595.28 rows=16441 width=51) (actual time=33.541..54.966 rows=16517 loops=1)"
+"                    Hash Cond: (u.idutilisateur = r.idutilisateur)"
+"                    ->  Seq Scan on utilisateur u  (cost=0.00..2022.00 rows=100000 width=25) (actual time=0.003..5.934 rows=100000 loops=1)"
+"                    ->  Hash  (cost=4578.35..4578.35 rows=16441 width=34) (actual time=33.415..33.419 rows=16517 loops=1)"
+"                          Buckets: 32768  Batches: 1  Memory Usage: 1335kB"
+"                          ->  Hash Join  (cost=2151.94..4578.35 rows=16441 width=34) (actual time=9.688..29.476 rows=16517 loops=1)"
+"                                Hash Cond: (m.idmateriel = r.idmateriel)"
+"                                ->  Seq Scan on materiel m  (cost=0.00..1637.00 rows=100000 width=18) (actual time=0.003..5.678 rows=100000 loops=1)"
+"                                ->  Hash  (cost=1946.43..1946.43 rows=16441 width=24) (actual time=9.564..9.566 rows=16517 loops=1)"
+"                                      Buckets: 32768  Batches: 1  Memory Usage: 1160kB"
+"                                      ->  Bitmap Heap Scan on reservation r  (cost=228.82..1946.43 rows=16441 width=24) (actual time=0.998..6.097 rows=16517 loops=1)"
+"                                            Recheck Cond: ((datedebutreservation >= '2025-06-01'::date) AND (datedebutreservation <= '2025-06-30'::date))"
+"                                            Heap Blocks: exact=1471"
+"                                            ->  Bitmap Index Scan on idx_reservation_date_debut  (cost=0.00..224.70 rows=16441 width=0) (actual time=0.806..0.806 rows=16517 loops=1)"
+"                                                  Index Cond: ((datedebutreservation >= '2025-06-01'::date) AND (datedebutreservation <= '2025-06-30'::date))"
+"Planning Time: 0.662 ms"
+"Execution Time: 104.639 ms"
+--Après l'ajout des index le temps d'execution à quelque peu diminué.
